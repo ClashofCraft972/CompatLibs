@@ -4,10 +4,11 @@
    "dependencies" : [
       {
          "fileId" : 2504530003,
-         "localId" : "40639a2c-bb9f-4d4f-b88c-41bfe264ffa8"
+         "localId" : "40639a2c-bb9f-4d4f-b88c-41bfe264ffa8",
+         "name" : "ModDatabase"
       }
    ],
-   "description" : "This mod is a modding Library that allow a lot of things for mods :[list]\r\n[*]Access the informations of other mods in a local game like :[list]\r\n[*]their differents sets (shape, tool, harvestable...),\r\n[*]their custom Crafting recipes (craftbot, cookbot and trader),\r\n[*]their Descriptions,[/list]\r\n[*]Have all the informations of a part that are in his shapeset (size, flammable, stacksize, set path, original mod Id...),\r\n[*]Introduce an all new tag system like Minecraft, if you want to check an item property, check if it's in a tag that specify this property (this depends on if modders registered their item tags, register your tags in the GFolder below)[/list]\r\n\r\nFor any suggestion/problems/questions, message me or ping on a server that I'm in on Discord : \"[b]@ClashofCraft972[/b]\"\r\n\r\nFor additional informations, check the link below :\r\nhttps://drive.google.com/drive/folders/1zq18JfoMygM5buyJ0P-Bj0eRGnY9rH9F?usp=drive_link",
+   "description" : "This mod is a modding Library that allow a lot of things for mods :[list]\r\n[*]Access the informations of other mods in a local game like :[list]\r\n[*]their differents sets (shape, tool, harvestable...),\r\n[*]their custom Crafting recipes (craftbot, cookbot and trader),\r\n[*]their Descriptions,[/list]\r\n[*]Have all the informations of a part that are in his shapeset (size, flammable, stacksize, set path, original mod Id...),\r\n[*]Introduce an all new tag system like Minecraft, if you want to check an item property, check if it's in a tag that specify this property (this depends on if modders registered their item tags, register your tags in the GFolder below)[/list]\r\n\r\nFor any suggestion/problems/questions, message me or ping on a server that I'm in on Discord : \"[b]@ClashofCraft972[/b]\"\r\n\r\nFor additional informations, check the Github :\r\nhttps://github.com/ClashofCraft972/CompatLibs/wiki/Compatibility-Library-Wiki",
    "fileId" : 3055543525,
    "localId" : "8ec0b0e1-b0ab-4f34-ae1c-59ad47c6e5ec",
    "name" : "Compatibility Library",

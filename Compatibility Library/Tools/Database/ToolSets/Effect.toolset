@@ -1,0 +1,17 @@
+{
+   "toolList" : [
+      {
+         "name" : "pipeTransferEffect",
+         "autoTool": true,
+         "showInInventory": false,
+         "previewRenderable" : "$CONTENT_DATA/Animations/Char_Tools/Char_connecttool/char_connecttool.rend",
+         "previewRotation" : [ 1, 0, 0, 0, 0, -1, 0, 1, 0 ],
+         "script" : {
+            "class" : "PipeEffect",
+            "data" : {},
+            "file" : "$CONTENT_DATA/Scripts/tools/pipeEffect.lua"
+         },
+         "uuid" : "26ac534c-1f93-45d9-865d-c39beed2ce0c"
+      }
+   ]
+}
