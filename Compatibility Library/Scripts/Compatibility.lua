@@ -50,42 +50,6 @@ local function loadEverything()
         end
     end
     loadLocalSets()
-    local function loadLocalRecipes()
-        sm.localData.recipes = {}
-
-        sm.localData.recipes.craftbot = sm.json.open("$SURVIVAL_DATA/CraftingRecipes/craftbot.json")
-        for i in ipairs(sm.localData.ModsIds) do
-            if sm.json.fileExists("$CONTENT_"..sm.localData.ModsIds[i].."/CraftingRecipes/craftbot.json") then
-                local craftbotData = sm.json.open("$CONTENT_"..sm.localData.ModsIds[i].."/CraftingRecipes/craftbot.json")
-                for k in ipairs(craftbotData) do
-                    table.insert(sm.localData.recipes.craftbot, craftbotData[k])
-                end
-            end
-        end
-
-        sm.localData.recipes.hideout = sm.json.open("$SURVIVAL_DATA/CraftingRecipes/hideout.json")
-        for i in ipairs(sm.localData.ModsIds) do
-            if sm.json.fileExists("$CONTENT_"..sm.localData.ModsIds[i].."/CraftingRecipes/hideout.json") then
-                local hideoutData = sm.json.open("$CONTENT_"..sm.localData.ModsIds[i].."/CraftingRecipes/hideout.json")
-                for k in ipairs(hideoutData) do
-                    table.insert(sm.localData.recipes.hideout, hideoutData[k])
-                end
-            end
-        end
-
-        sm.localData.recipes.refinery = sm.json.open("$SURVIVAL_DATA/CraftingRecipes/refinery.json")
-        for i in ipairs(sm.localData.ModsIds) do
-            if sm.json.fileExists("$CONTENT_"..sm.localData.ModsIds[i].."/CraftingRecipes/refinery.json") then
-                local hideoutData = sm.json.open("$CONTENT_"..sm.localData.ModsIds[i].."/CraftingRecipes/refinery.json")
-                for k in ipairs(hideoutData) do
-                    table.insert(sm.localData.recipes.refinery, hideoutData[k])
-                end
-            end
-        end
-
-
-    end
-    loadLocalRecipes()
 
     local function loadLocalTags()
        sm.localData.tags = {}
@@ -122,6 +86,26 @@ local function loadEverything()
     end    
     loadLocalTags()
 
+
+    local function loadLocalRecipes()
+        sm.localData.recipes = {}
+
+        for _, recipe in pairs(sm.localData.tags.Crafter) do
+            local craftType = recipe.recipe
+            sm.localData.recipes[craftType] = {}
+            if sm.json.fileExists("$SURVIVAL_DATA/CraftingRecipes/"..craftType..".json") then
+                sm.localData.recipes[craftType] = sm.json.open("$SURVIVAL_DATA/CraftingRecipes/"..craftType..".json")
+            end
+            for _, modId in ipairs(sm.localData.ModsIds) do
+                if sm.json.fileExists("$CONTENT_"..modId.."/CraftingRecipes/"..craftType..".json") then
+                    for _, craft in ipairs(sm.json.open("$CONTENT_"..modId.."/CraftingRecipes/"..craftType..".json")) do
+                        table.insert(sm.localData.recipes[craftType], craft)
+                    end
+                end
+            end
+        end
+    end
+    loadLocalRecipes()
 end
 loadEverything()
 

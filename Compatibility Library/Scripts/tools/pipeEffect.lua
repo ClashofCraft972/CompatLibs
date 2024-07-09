@@ -4,75 +4,122 @@ print("Loading PipeEffect tool")
 PipeEffect = class()
 
 function PipeEffect.client_onCreate( self )
-    self.effectData = {}
+    self.effectTasks = {}
+    self.speed = 2.5
     sm.gameData.pipePath.tool = self.tool
-    self.speed = 40
+    self.glowchange = 4
 end
 
 function PipeEffect.client_onRefresh( self )
-    self.effectData = {}
-    self.speed = 40
+    self.speed = 2.5
+    self.glowchange = 4
+    self.effectTasks = {}
+    sm.gameData.pipePath.tool = self.tool
 end
 
-function PipeEffect.cl_playPipeTransferEffect( self , index )
-    self.effectData[index].effect = sm.effect.createEffect("ShapeRenderable")
-    self.effectData[index].effect:setParameter( "uuid", self.effectData[index].ItemUuid )
-    self.effectData[index].effect:start()
-    self.effectData[index].pos = self.effectData[index].path[1]:getWorldPosition()
-    self.effectData[index].effect:setPosition( self.effectData[index].pos )
-    self.effectData[index].effect:setRotation( sm.quat.identity() )
-    self.effectData[index].effect:setScale( self.effectData[index].size )
+function PipeEffect.cl_lightUpPipes( self, data )
+    local uvFrame = 2
+    local glowMultiplier = 1.0
+
+    if data.UvFrame ~= nil then
+        uvFrame = data.UvFrame
+    end
+    if data.glowMultiplier ~= nil then
+        glowMultiplier = data.glowMultiplier
+    end
+
+    data.shape:getInteractable():setUvFrameIndex( uvFrame )
+    data.shape:getInteractable():setGlowMultiplier( glowMultiplier )
+end
+
+function PipeEffect.sv_lightUpPipes( self, data )
+    self.network:sendToClients( 'cl_lightUpPipes' , data )
+end
+
+function PipeEffect.pushShapeEffectTask( self, data )
+    local shapeList = data.path
+    local item = data.ItemUuid
+	assert( item )
+	local effect = sm.effect.createEffect( "ShapeRenderable" )
+	local bounds = sm.item.getShapeSize( item )
+	assert( bounds )
+	effect:setParameter( "uuid", item )
+	effect:setPosition( shapeList[1]:getWorldPosition() )
+	effect:setScale( sm.vec3.new( sm.construction.constants.subdivideRatio, sm.construction.constants.subdivideRatio, sm.construction.constants.subdivideRatio ) / bounds )
+
+    local pipes = {}
+    for _, shape in ipairs(shapeList) do
+        if CompatLibs.getUuidTagList(item) ~= nil and CompatLibs.getUuidTagList(item).VacuumPipe ~= nil then
+            table.insert(pipes, shape)
+        end
+    end
+
+	self:pushEffectTask( shapeList, effect, pipes )
+end
+
+function PipeEffect.pushEffectTask( self, shapeList, effect, pipes )
+	table.insert( self.effectTasks, { shapeList = shapeList, effect = effect, progress = 0, pipes = pipes })
+end
+
+function PipeEffect.client_onUpdate( self, dt )
+    if self.effectTasks ~= nil then
+        local function reverse_ipairs( a )
+            function iter( a, i )
+                i = i - 1
+                local v = a[i]
+                if v then
+                    return i, v
+                end
+            end
+            return iter, a, #a + 1
+        end
+        for idx, task in reverse_ipairs( self.effectTasks ) do
+
+            if task.progress == 0 then
+                task.effect:start()
+            end
+
+            if task.progress > 0 and task.progress < 1 and #task.shapeList > 1 then
+                for _, pipe in pairs(task.pipes) do
+                    local glowMultiplier = 0.5*(1+math.sin(4*math.pi*(task.progress+0.125)))
+                    local uvFrame = 2
+                    if task.progress >.25 and task.progress < .75 then
+                        uvFrame = 3 
+                    end
+                    self:cl_lightUpPipes({shape = pipe, UvFrame = uvFrame, glowMultiplier = glowMultiplier})
+                end
+
+                local span = ( 1.0 / ( #task.shapeList - 1 ) )
+
+                local b = math.ceil( task.progress / span ) + 1
+                local a = b - 1
+                local t = ( task.progress - ( a - 1 ) * span ) / span
+                --print( "A: "..a.." B: "..b.." t: "..t)
+
+                assert(a ~= 0 and a <= #task.shapeList)
+                assert(b ~= 0 and b <= #task.shapeList)
+
+                local nodeA = task.shapeList[a]
+                local nodeB = task.shapeList[b]
+
+                if pcall( function() nodeA:shapeExists() end ) and pcall( function() nodeB:shapeExists() end ) then
+                    local lerpedPosition = ( nodeA:getWorldPosition() * ( 1 - t ) ) + ( nodeB:getWorldPosition() * t )
+                    task.effect:setPosition( lerpedPosition )
+                else
+                    task.progress = 1 -- End the effect
+                end
+            end
+
+            task.progress = task.progress + dt / self.speed
+
+            if task.progress >= 1 then
+                task.effect:stop()
+                table.remove( self.effectTasks, idx )
+            end
+        end
+    end
 end
 
 function PipeEffect.sv_playPipeTransferEffect(self, data)
-    local itemUuid = data.ItemUuid
-    local size = sm.item.getShapeSize(itemUuid)
-    local factor = size.x
-    if size.y > factor then factor = size.y end
-    if size.z > factor then factor = size.z end
-    factor = 6*factor
-    print(factor)
-
-    data.size = sm.vec3.new( 1 / factor, 1 / factor, 1 / factor )
-
-    data.aim = 2
-
-    table.insert(self.effectData, data)
-    local index = #self.effectData
-    self.network:sendToClients( 'cl_playPipeTransferEffect', index )
-
-end
-
-function PipeEffect.client_onFixedUpdate( self )
-    if self.effectData == nil then self.effectData = {} end
-    if sm.gameData.pipePath.tool == nil then sm.gameData.pipePath.tool = self.tool end
-    local speed = self.speed / 40
-
-    for index in pairs(self.effectData) do
-        if self.effectData[index].aim <= #self.effectData[index].path then
-            local aimPos = self.effectData[index].path[self.effectData[index].aim]:getWorldPosition()
-            if CompatLibs.distance( aimPos, self.effectData[index].pos ) <= speed then
-                self.effectData[index].aim = self.effectData[index].aim + 1
-            else
-                self.effectData[index].dir = aimPos - self.effectData[index].pos
-                self.effectData[index].dir = self.effectData[index].dir:normalize() + self.effectData[index].path[self.effectData[index].aim]:getVelocity()
-                self.effectData[index].pos = self.effectData[index].pos + self.effectData[index].dir*speed
-                self.effectData[index].effect:setPosition( self.effectData[index].pos )
-                print( index, "fixed", self.effectData[index].pos )
-            end
-        else
-            self.effectData[index].effect:stop()
-            self.effectData[index].effect:destroy()
-            self.effectData[index] = nil
-        end
-    end
-end
-
-function PipeEffect.client_onUpdate( self , deltaTime )
-    for index, effectData in pairs(self.effectData) do
-        if effectData.dir ~= nil then
-            self.effectData[index].effect:setPosition( effectData.pos +  effectData.dir*self.speed*deltaTime )
-            print( index, "frame", effectData.pos +  effectData.dir*self.speed*deltaTime)
-        end
-    end
+    self.network:sendToClients( 'pushShapeEffectTask', data )
 end
